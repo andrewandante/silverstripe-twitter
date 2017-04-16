@@ -26,6 +26,9 @@ PageController:
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
     - SilverStripe\Twitter\Extensions\TwitterSiteConfig
+SilverStripe\Security\Member:
+  extensions:
+    - SilverStripe\Twitter\Extensions\TwitterSiteConfig
 SilverStripe\Twitter\Services\CachedTwitterService:
 # Lifetime in seconds of cache
   lifetime: 300

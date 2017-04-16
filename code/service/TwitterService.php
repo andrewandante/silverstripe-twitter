@@ -8,6 +8,7 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBDatetime;
+use SilverStripe\Security\Member;
 use SilverStripe\SiteConfig\SiteConfig;
 use TwitterOAuth;
 
@@ -36,10 +37,13 @@ class TwitterService implements ITwitterService {
 	 * @return TwitterOAuth
 	 */
 	protected function getConnection() {
-		$consumerKey = SiteConfig::current_site_config()->TwitterAppConsumerKey;
-		$consumerSecret = SiteConfig::current_site_config()->TwitterAppConsumerSecret;
-		$accessToken = SiteConfig::current_site_config()->TwitterAppAccessToken;
-		$accessSecret = SiteConfig::current_site_config()->TwitterAppAccessSecret;
+		$member = Member::currentUser();
+		$siteConfig = SiteConfig::current_site_config();
+
+		$consumerKey = $member->TwitterAppConsumerKey ?: $siteConfig->TwitterAppConsumerKey;
+		$consumerSecret = $member->TwitterAppConsumerSecret ?: $siteConfig->TwitterAppConsumerSecret;
+		$accessToken = $member->TwitterAppAccessToken ?: $siteConfig->TwitterAppAccessToken;
+		$accessSecret = $member->TwitterAppAccessSecret ?: $siteConfig->TwitterAppAccessSecret;
 
 		return new TwitterOAuth($consumerKey, $consumerSecret, $accessToken, $accessSecret);
 	}
@@ -50,7 +54,7 @@ class TwitterService implements ITwitterService {
 			return $cache->get('configuration');
 		}
 		$connection = $this->getConnection();
-		$response = $connection->get("https://api.twitter.com/1.1/help/configuration.json");
+		$response = json_decode($connection->get("https://api.twitter.com/1.1/help/configuration.json"));
 		if ($response && is_array($response)) {
 			$cache->set('configuration', $response);
 		}
@@ -62,12 +66,18 @@ class TwitterService implements ITwitterService {
 		// Check user
 		if (empty($user)) return null;
 
+		$member = Member::currentUser();
+		$siteConfig = SiteConfig::current_site_config();
+
+		$includeRTs = $member->TwitterIncludeRTs ?: $siteConfig->TwitterIncludeRTs;
+		$excludeReplies = $member->TwitterExcludeReplies ?: $siteConfig->TwitterExcludeReplies;
+
 		// Call rest api
 		$arguments = http_build_query(array(
 			'screen_name' => $user,
 			'count' => $count,
-			'include_rts' => SiteConfig::current_site_config()->TwitterIncludeRTs,
-			'exclude_replies' => SiteConfig::current_site_config()->TwitterExcludeReplies
+			'include_rts' => $includeRTs,
+			'exclude_replies' => $excludeReplies
 		));
 		$connection = $this->getConnection();
 		$response = $connection->get("https://api.twitter.com/1.1/statuses/user_timeline.json?$arguments");
