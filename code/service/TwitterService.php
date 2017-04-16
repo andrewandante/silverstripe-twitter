@@ -2,8 +2,11 @@
 
 namespace SilverStripe\Twitter\Services;
 // Require third party lib
+use Psr\SimpleCache\CacheInterface;
+use SilverStripe\Core\Cache\CacheFactory;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Convert;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBDatetime;
 use SilverStripe\SiteConfig\SiteConfig;
 use TwitterOAuth;
@@ -41,6 +44,19 @@ class TwitterService implements ITwitterService {
 		return new TwitterOAuth($consumerKey, $consumerSecret, $accessToken, $accessSecret);
 	}
 
+	public function getConfiguration() {
+		$cache = Injector::inst()->get(CacheInterface::class . '.TwitterConfig');
+		if ($cache->has('configuration')) {
+			return $cache->get('configuration');
+		}
+		$connection = $this->getConnection();
+		$response = $connection->get("https://api.twitter.com/1.1/help/configuration.json");
+		if ($response && is_array($response)) {
+			$cache->set('configuration', $response);
+		}
+		return $response;
+	}
+
 	function getTweets($user, $count) {
 
 		// Check user
@@ -67,9 +83,23 @@ class TwitterService implements ITwitterService {
 		return $tweets;
 	}
 
+	function updateStatus($status, $media = null) {
+		$config = $this->getConfiguration();
+		$linkLength = self::$use_https ? $config->short_url_length_https : $config->short_url_length;
+		if (strlen($status) > (140 - $linkLength)) {
+			throw new \InvalidArgumentException('Status contains too many characters');
+		}
+
+		$arguments = http_build_query([
+			'status' => $status
+		]);
+		$connection = $this->getConnection();
+		return $connection->post("https://api.twitter.com/1.1/statuses/update.json?$arguments");
+	}
+
 	/**
 	 * get favourite tweets associated with the user.
-	 * */
+	 */
 	function getFavorites($user, $count) {
 
 		// Check user

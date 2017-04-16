@@ -2,7 +2,10 @@
 
 namespace SilverStripe\Twitter\Services;
 
+use Psr\SimpleCache\CacheInterface;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Convert;
+use SilverStripe\Core\Injector\Injector;
 
 /**
  * Caches a wrapped twitter service
@@ -25,14 +28,14 @@ class CachedTwitterService implements ITwitterService {
 	function getTweets($user, $count) {
 		// Init caching
 		$cacheKey = "getTweets_{$user}_{$count}";
-		$cache = \SS_Cache::factory('CachedTwitterService');
+		$cache = Injector::inst()->get(CacheInterface::class . '.CachedTwitterService');
 
 		// Return cached value, if available
-		if($rawResult = $cache->load($cacheKey)) return unserialize($rawResult);
+		if($rawResult = $cache->get($cacheKey)) return $rawResult;
 
 		// Save and return
 		$result = $this->cachedService->getTweets($user, $count);
-		$cache->save(serialize($result), $cacheKey, array(), Config::inst()->get('CachedTwitterService', 'lifetime'));
+		$cache->set($cacheKey, $result, Config::inst()->get('CachedTwitterService', 'lifetime'));
 
 		// Refresh the 'TimeAgo' field, as the cached value would now be outdated, or the locale could have changed.
 		if($result) foreach($result as $index => $item) {
@@ -49,16 +52,16 @@ class CachedTwitterService implements ITwitterService {
 
 		// Init caching
 		$cacheKey = "getFavorites_{$user}_{$count}";
-		$cache = SS_Cache::factory('CachedTwitterService');
+		$cache = Injector::inst()->get(CacheInterface::class . '.CachedTwitterService');
 
 		// Return cached value, if available
-		if($rawResult = $cache->load($cacheKey)) {
-			return unserialize($rawResult);
+		if($rawResult = $cache->get($cacheKey)) {
+			return $rawResult;
 		}
 
 		// Save and return
 		$result = $this->cachedService->getFavorites($user, $count);
-		$cache->save(serialize($result), $cacheKey, array(), Config::inst()->get('CachedTwitterService', 'lifetime'));
+		$cache->set($cacheKey, $result, Config::inst()->get('CachedTwitterService', 'lifetime'));
 
 		// Refresh the 'TimeAgo' field, as the cached value would now be outdated, or the locale could have changed.
 		if($result) foreach($result as $index => $item) {
@@ -72,14 +75,14 @@ class CachedTwitterService implements ITwitterService {
 		// Init caching
 
 		$cacheKey = "searchTweets_".str_replace("-", "_", Convert::raw2url($query))."_{$count}";
-		$cache = SS_Cache::factory('CachedTwitterService');
+		$cache = Injector::inst()->get(CacheInterface::class . '.CachedTwitterService');
 
 		// Return cached value, if available
- 		if($rawResult = $cache->load($cacheKey)) return unserialize($rawResult);
+ 		if($rawResult = $cache->get($cacheKey)) return $rawResult;
 
 		// Save and return
 		$result = $this->cachedService->searchTweets($query, $count);
-		$cache->save(serialize($result), $cacheKey, array(), Config::inst()->get('CachedTwitterService', 'lifetime'));
+		$cache->set($cacheKey, $result, Config::inst()->get('CachedTwitterService', 'lifetime'));
 
 		// Refresh the 'TimeAgo' field, as the cached value would now be outdated, or the locale could have changed.
 		if($result) foreach($result as $index => $item) {

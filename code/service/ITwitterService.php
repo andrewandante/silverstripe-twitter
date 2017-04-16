@@ -2,6 +2,8 @@
 
 namespace SilverStripe\Twitter\Services;
 
+use SilverStripe\Assets\File;
+
 /**
  * Interface for a twitter service
  *

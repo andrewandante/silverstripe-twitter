@@ -8,6 +8,7 @@ use SilverStripe\ORM\FieldType\DBDatetime;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\SiteConfig\SiteConfig;
 use SilverStripe\Twitter\Services\ITwitterService;
+use SilverStripe\Twitter\Services\TwitterService;
 use SilverStripe\View\ArrayData;
 
 /**

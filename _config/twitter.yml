@@ -1,13 +1,22 @@
 ---
 Name: twitterconfig
 ---
-SilverStripe\Core\Injector:
+SilverStripe\Core\Injector\Injector:
   SilverStripe\Twitter\Services\TwitterService:
     class: SilverStripe\Twitter\Services\CachedTwitterService
     constructor:
       - %$WebTwitterService
-  SilverStripe\Twitter\Services\WebTwitterService:
+  WebTwitterService:
     class: SilverStripe\Twitter\Services\TwitterService
+  Psr\SimpleCache\CacheInterface.TwitterConfig:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: TwitterConfig
+      defaultLifetime: 86400
+  Psr\SimpleCache\CacheInterface.CachedTwitterService:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: CachedTwitterService
 SilverStripe\Twitter\Extensions\TwitterExtension:
   dependencies:
     TwitterService: %$SilverStripe\Twitter\Services\TwitterService
